@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>东北大学校园网自动登录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #1e3c72;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            background: #f5f7fa;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.online {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .status-dot.offline {
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .status-dot.checking {
+            background: #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2a5298;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(42, 82, 152, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #9ca3af;
+        }
+
+        .remember-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .remember-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .remember-row label {
+            color: #6b7280;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(30, 60, 114, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .message.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+
+        .log-section {
+            margin-top: 25px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .log-header h3 {
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .log-header button {
+            background: none;
+            border: none;
+            color: #6b7280;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .log-header button:hover {
+            color: #374151;
+        }
+
+        .log-box {
+            background: #1f2937;
+            border-radius: 10px;
+            padding: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .log-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .log-box::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+
+        .log-entry {
+            color: #d1d5db;
+            margin-bottom: 4px;
+        }
+
+        .log-entry.success {
+            color: #10b981;
+        }
+
+        .log-entry.error {
+            color: #ef4444;
+        }
+
+        .log-entry.info {
+            color: #60a5fa;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: #2a5298;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 25px;
+            }
+
+            .logo h1 {
+                font-size: 24px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🎓 东北大学</h1>
+            <p>校园网自动登录系统</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-dot checking" id="statusDot"></div>
+            <span class="status-text" id="statusText">检测网络状态...</span>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">学号</label>
+                <input type="text" id="username" name="username" placeholder="请输入学号" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" placeholder="请输入密码" required>
+            </div>
+
+            <div class="remember-row">
+                <input type="checkbox" id="remember" name="remember">
+                <label for="remember">记住账号密码</label>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <span class="spinner" id="loginSpinner"></span>
+                    <span id="loginText">🔐 登录</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="logoutBtn">
+                    <span class="spinner" id="logoutSpinner"></span>
+                    <span id="logoutText">🔓 下线</span>
+                </button>
+            </div>
+        </form>
+
+        <div class="message" id="message"></div>
+
+        <div class="log-section">
+            <div class="log-header">
+                <h3>📋 操作日志</h3>
+                <button type="button" onclick="clearLogs()">清空日志</button>
+            </div>
+            <div class="log-box" id="logBox">
+                <div class="log-entry info">系统已就绪，等待操作...</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Made with ❤️ for NEU Students</p>
+        </div>
+    </div>
+
+    <script>
+        // API基础地址
+        const API_BASE = '';
+
+        // DOM元素
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginSpinner = document.getElementById('loginSpinner');
+        const logoutSpinner = document.getElementById('logoutSpinner');
+        const loginText = document.getElementById('loginText');
+        const logoutText = document.getElementById('logoutText');
+        const messageDiv = document.getElementById('message');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const logBox = document.getElementById('logBox');
+
+        // 页面加载时
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCredentials();
+            checkStatus();
+        });
+
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${time}] ${message}`;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // 清空日志
+        function clearLogs() {
+            logBox.innerHTML = '<div class="log-entry info">日志已清空</div>';
+        }
+
+        // 显示消息
+        function showMessage(text, type = 'info') {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            // 5秒后自动隐藏
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // 更新状态显示
+        function updateStatus(online, message) {
+            statusDot.className = 'status-dot ' + (online ? 'online' : 'offline');
+            statusText.textContent = message;
+        }
+
+        // 检查网络状态
+        async function checkStatus() {
+            try {
+                statusDot.className = 'status-dot checking';
+                statusText.textContent = '检测网络状态...';
+                
+                const response = await fetch(`${API_BASE}/api/status`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatus(data.online, data.message);
+                    addLog(data.message, data.online ? 'success' : 'info');
+                }
+            } catch (error) {
+                updateStatus(false, '无法连接服务器');
+                addLog('无法连接服务器: ' + error.message, 'error');
+            }
+        }
+
+        // 保存账号密码
+        function saveCredentials() {
+            const remember = document.getElementById('remember').checked;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (remember) {
+                localStorage.setItem('neu_username', username);
+                localStorage.setItem('neu_password', password);
+                localStorage.setItem('neu_remember', 'true');
+            } else {
+                localStorage.removeItem('neu_username');
+                localStorage.removeItem('neu_password');
+                localStorage.removeItem('neu_remember');
+            }
+        }
+
+        // 加载保存的账号密码
+        function loadCredentials() {
+            const remember = localStorage.getItem('neu_remember');
+            if (remember === 'true') {
+                document.getElementById('username').value = localStorage.getItem('neu_username') || '';
+                document.getElementById('password').value = localStorage.getItem('neu_password') || '';
+                document.getElementById('remember').checked = true;
+            }
+        }
+
+        // 登录
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showMessage('请输入学号和密码', 'error');
+                return;
+            }
+            
+            // 保存凭据
+            saveCredentials();
+            
+            // 禁用按钮，显示加载状态
+            loginBtn.disabled = true;
+            logoutBtn.disabled = true;
+            loginSpinner.style.display = 'block';
+            loginText.textContent = '登录中...';
+            
+            addLog('开始登录流程...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    addLog('✅ ' + data.message, 'success');
+                    if (data.data) {
+                        addLog('响应数据: ' + JSON.stringify(data.data), 'info');
+                    }
+                    updateStatus(true, '网络已连接');
+                } else {
+                    showMessage(data.message, 'error');
+                    addLog('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('请求失败: ' + error.message, 'error');
+                addLog('请求失败: ' + error.message, 'error');
+            } finally {
+                loginBtn.disabled = false;
+                logoutBtn.disabled = false;
+                loginSpinner.style.display = 'none';
+                loginText.textContent = '🔐 登录';
+            }
+        });
+
+        // 下线
+        logoutBtn.addEventListener('click', async () => {
+            // 禁用按钮，显示加载状态
+            loginBtn.disabled = true;
+            logoutBtn.disabled = true;
+            logoutSpinner.style.display = 'block';
+            logoutText.textContent = '下线中...';
+            
+            addLog('开始下线流程...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    addLog('✅ ' + data.message, 'success');
+                    if (data.data) {
+                        addLog('响应数据: ' + JSON.stringify(data.data), 'info');
+                    }
+                    updateStatus(false, '已下线');
+                } else {
+                    showMessage(data.message, 'error');
+                    addLog('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('请求失败: ' + error.message, 'error');
+                addLog('请求失败: ' + error.message, 'error');
+            } finally {
+                loginBtn.disabled = false;
+                logoutBtn.disabled = false;
+                logoutSpinner.style.display = 'none';
+                logoutText.textContent = '🔓 下线';
+            }
+        });
+
+        // 定时检查状态（每60秒）
+        setInterval(checkStatus, 60000);
+    </script>
+</body>
+</html>
