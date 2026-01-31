@@ -75,6 +75,6 @@ def api_status():
 if __name__ == '__main__':
     print("=" * 50)
     print("东北大学校园网自动登录系统")
-    print("访问地址: http://127.0.0.1:5000")
+    print("访问地址: http://172.20.110.222:5000")
     print("=" * 50)
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=True, host='172.20.110.222', port=5000)
